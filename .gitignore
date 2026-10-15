@@ -1,0 +1,9 @@
+cat > .gitignore << 'EOF'
+node_modules/
+frontend/dist/
+backend/target/
+.vscode/
+.idea/
+*.log
+backend/src/main/resources/application.properties
+EOF
