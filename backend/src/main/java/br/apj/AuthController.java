@@ -16,11 +16,17 @@ public class AuthController {
 
     private final UserRepository repo;
     private final BCryptPasswordEncoder enc = new BCryptPasswordEncoder();
+    // token -> id do usuário (em memória; reiniciar o servidor encerra as sessões)
     private final Map<String, Long> sessoes = new ConcurrentHashMap<>();
 
     public AuthController(UserRepository repo) { this.repo = repo; }
 
-    private static ResponseEntity<?> erro(int status, String msg) {
+    // Usado pelo PerfilController para saber quem está logado.
+    Long usuarioDe(String auth) {
+        return auth == null ? null : sessoes.get(auth.replace("Bearer ", ""));
+    }
+
+    static ResponseEntity<?> erro(int status, String msg) {
         return ResponseEntity.status(status).body(Map.of("erro", msg));
     }
 

@@ -1,13 +1,13 @@
-const acompanhados = [
-  { nome: "Hades II", loja: "Steam", preco: "R$ 74,99", cor: "#7a3b2e" },
-  { nome: "Hollow Knight: Silksong", loja: "Steam · Xbox", preco: "Aguardando", cor: "#1f6f78" },
-];
+import { JOGOS, desconto, brl } from "./catalogo.js";
 
-const abas = [
-  ["⌂", "Início"], ["⌕", "Buscar"], ["♡", "Favoritos"], ["🔔", "Alertas"], ["👤", "Perfil"],
-];
+export default function Home({ user, favoritos, irPara }) {
+  const favs = JOGOS.filter((j) => favoritos.includes(j.id));
+  const promos = JOGOS.filter((j) => desconto(j) > 0);
+  const maior = Math.max(0, ...promos.map(desconto));
+  const destaque = [...promos].sort((a, b) => desconto(b) - desconto(a))[0];
+  const alertas = favs.filter((j) => desconto(j) > 0).length;
+  const ir = (destino, promo) => (e) => { e.preventDefault(); irPara(destino, promo); };
 
-export default function Home({ user, onSair }) {
   return (
     <main className="tela home">
       <header className="topo">
@@ -17,60 +17,54 @@ export default function Home({ user, onSair }) {
           <small>Boas ofertas hoje</small>
           <h2>Olá, {user.nome}!</h2>
         </div>
-        <button className="sino" aria-label="Notificações">🔔</button>
+        <button className="sino" aria-label="Notificações" onClick={() => irPara("alertas")}>🔔</button>
       </header>
 
       <section className="destaque">
         <div>
-          <h3>12 ofertas</h3>
-          <p>combinam com seus favoritos e filtros hoje.</p>
-          <a href="#" onClick={(e) => e.preventDefault()}>Ver promoções →</a>
+          <h3>{promos.length} ofertas</h3>
+          <p>em promoção no catálogo hoje.</p>
+          <a href="#" onClick={ir("buscar", true)}>Ver promoções →</a>
         </div>
-        <div className="desc"><small>Até</small><strong>-70%</strong></div>
+        <div className="desc"><small>Até</small><strong>-{maior}%</strong></div>
       </section>
 
       <section className="stats">
-        <div><span>♡</span><strong>8</strong><small>Favoritos</small></div>
-        <div><span className="verde">🔔</span><strong>3</strong><small>Notificações</small></div>
+        <div><span>♡</span><strong>{favs.length}</strong><small>Favoritos</small></div>
+        <div><span className="verde">🔔</span><strong>{alertas}</strong><small>Notificações</small></div>
       </section>
 
-      <div className="titulo-sec"><h3>Jogos acompanhados</h3><a href="#" onClick={(e) => e.preventDefault()}>Ver todos</a></div>
+      <div className="titulo-sec"><h3>Jogos acompanhados</h3><a href="#" onClick={ir("favoritos")}>Ver todos</a></div>
       <section className="grade">
-        {acompanhados.map((j) => (
-          <article key={j.nome} className="card-jogo">
+        {favs.slice(0, 2).map((j) => (
+          <article key={j.id} className="card-jogo">
             <div className="capa" style={{ background: j.cor }} />
             <div>
               <strong>{j.nome}</strong>
-              <small>{j.loja}</small>
-              <b className="verde">{j.preco}</b>
+              <small>{j.lojas.slice(0, 2).join(" · ")}</small>
+              <b className="verde">{brl(j.preco)}</b>
             </div>
             <small className="monitor">∿ Monitorando preço</small>
           </article>
         ))}
       </section>
+      {!favs.length && <p className="contagem">Você ainda não favoritou nenhum jogo. Use a aba Buscar.</p>}
 
-      <div className="titulo-sec"><h3>Promoção em destaque</h3><a href="#" onClick={(e) => e.preventDefault()}>Explorar</a></div>
-      <article className="promo">
-        <div className="capa grande" style={{ background: "#27466e" }} />
-        <div>
-          <span className="selo">-50%</span>
-          <h4>Cyberpunk 2077</h4>
-          <small>RPG · Mundo aberto</small>
-          <p><b className="verde preco">R$ 99,95</b> <s>R$ 199,90</s></p>
-          <small className="alerta">Termina em 2 dias</small>
-        </div>
-        <small className="loja">Steam</small>
-      </article>
-
-      <nav className="abas">
-        {abas.map(([icone, nome]) => (
-          <button key={nome} className={nome === "Início" ? "ativa" : ""}
-                  onClick={nome === "Perfil" ? onSair : undefined}
-                  title={nome === "Perfil" ? "Sair da conta" : nome}>
-            <span>{icone}</span>{nome}
-          </button>
-        ))}
-      </nav>
+      {destaque && (
+        <>
+          <div className="titulo-sec"><h3>Promoção em destaque</h3><a href="#" onClick={ir("buscar", true)}>Explorar</a></div>
+          <article className="promo">
+            <div className="capa grande" style={{ background: destaque.cor }} />
+            <div>
+              <span className="selo">-{desconto(destaque)}%</span>
+              <h4>{destaque.nome}</h4>
+              <small>{destaque.genero}</small>
+              <p><b className="verde preco">{brl(destaque.preco)}</b> <s>{brl(destaque.original)}</s></p>
+            </div>
+            <small className="loja">{destaque.lojas[0]}</small>
+          </article>
+        </>
+      )}
     </main>
   );
 }
