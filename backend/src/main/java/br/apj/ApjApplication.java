@@ -11,7 +11,7 @@ public class ApjApplication {
     public static void main(String[] args) {
         SpringApplication.run(ApjApplication.class, args);
     }
-
+    
     @Bean
     CommandLineRunner seed(UserRepository repo) {
         return args -> {

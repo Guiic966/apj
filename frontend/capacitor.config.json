@@ -1,0 +1,7 @@
+{
+  "appId": "br.apj.app",
+  "appName": "APJ",
+  "webDir": "dist",
+  "server": { "androidScheme": "http" },
+  "android": { "allowMixedContent": true }
+}

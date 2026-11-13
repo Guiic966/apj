@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API } from "./api.js";
 
 export default function Cadastro({ onLogin, onVoltar }) {
   const [nome, setNome] = useState("");
@@ -19,7 +20,7 @@ export default function Cadastro({ onLogin, onVoltar }) {
     setErro("");
     setEnviando(true);
     try {
-      const r = await fetch("/api/auth/cadastro", {
+      const r = await fetch(API + "/api/auth/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nome, email, senha }),

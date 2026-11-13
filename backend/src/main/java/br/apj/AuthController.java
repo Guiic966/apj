@@ -16,12 +16,10 @@ public class AuthController {
 
     private final UserRepository repo;
     private final BCryptPasswordEncoder enc = new BCryptPasswordEncoder();
-    // token -> id do usuário (em memória; reiniciar o servidor encerra as sessões)
     private final Map<String, Long> sessoes = new ConcurrentHashMap<>();
 
     public AuthController(UserRepository repo) { this.repo = repo; }
 
-    // Usado pelo PerfilController para saber quem está logado.
     Long usuarioDe(String auth) {
         return auth == null ? null : sessoes.get(auth.replace("Bearer ", ""));
     }
@@ -49,7 +47,7 @@ public class AuthController {
 
         try {
             User novo = repo.save(new User(nome, email, enc.encode(senha)));
-            return sessao(201, novo); // já entra logado após criar a conta
+            return sessao(201, novo);
         } catch (DataIntegrityViolationException e) {
             return erro(409, "Este e-mail já está cadastrado.");
         }
