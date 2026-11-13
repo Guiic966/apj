@@ -1,5 +1,10 @@
+// No navegador (npm run dev) o endereço é vazio e o proxy do Vite cuida do resto.
+// No app mobile, VITE_API_URL (arquivo .env.mobile) aponta para o backend.
+export const API = import.meta.env.VITE_API_URL || "";
+
+// Chamada ao backend já com o token do usuário logado.
 export async function api(caminho, metodo = "GET", corpo) {
-  const r = await fetch("/api" + caminho, {
+  const r = await fetch(API + "/api" + caminho, {
     method: metodo,
     headers: {
       "Content-Type": "application/json",

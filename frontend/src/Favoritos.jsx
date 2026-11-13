@@ -1,9 +1,11 @@
-import { JOGOS, desconto, brl } from "./catalogo.js";
+import { brl, imagemDe } from "./catalogo.js";
 import CardJogo from "./CardJogo.jsx";
 
-export default function Favoritos({ favoritos, onFavorito, irPara }) {
-  const lista = JOGOS.filter((j) => favoritos.includes(j.id));
-  const promo = lista.filter((j) => desconto(j) > 0);
+export default function Favoritos({ favoritos, precosFav, onFavorito, irPara, onDetalhes }) {
+  const lista = favoritos.map((f) => ({
+    id: f.id, nome: f.nome, imagem: imagemDe(f.id), preco: 0, original: 0, desconto: 0, ...precosFav[f.id],
+  }));
+  const promo = lista.filter((j) => j.desconto > 0);
   const economia = promo.reduce((soma, j) => soma + (j.original - j.preco), 0);
 
   return (
@@ -19,7 +21,7 @@ export default function Favoritos({ favoritos, onFavorito, irPara }) {
         </div>
       )}
 
-      {lista.map((j) => <CardJogo key={j.id} jogo={j} favorito onFavorito={onFavorito} />)}
+      {lista.map((j) => <CardJogo key={j.id} jogo={j} favorito onFavorito={onFavorito} onDetalhes={onDetalhes} />)}
       {!lista.length && (
         <div className="vazio">
           <p>Você ainda não tem jogos favoritos.</p>

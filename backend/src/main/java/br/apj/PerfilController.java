@@ -3,6 +3,7 @@ package br.apj;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,35 +11,43 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 public class PerfilController {
     record ConexaoReq(String conta) {}
+    record FavReq(String nome, Integer base) {}
 
     private static final Set<String> PLATAFORMAS = Set.of("steam", "playstation", "xbox", "epic");
     private final AuthController auth;
     private final FavoritoRepository favoritos;
     private final ConexaoRepository conexoes;
+    private final PreferenciaRepository prefs;
 
-    public PerfilController(AuthController auth, FavoritoRepository favoritos, ConexaoRepository conexoes) {
-        this.auth = auth; this.favoritos = favoritos; this.conexoes = conexoes;
+    public PerfilController(AuthController auth, FavoritoRepository favoritos, ConexaoRepository conexoes,
+                            PreferenciaRepository prefs) {
+        this.auth = auth; this.favoritos = favoritos; this.conexoes = conexoes; this.prefs = prefs;
     }
 
-    // Só executa a ação se o token enviado pertencer a um usuário logado.
     private ResponseEntity<?> comUsuario(String header, Function<Long, ResponseEntity<?>> acao) {
         Long uid = auth.usuarioDe(header);
         return uid == null ? AuthController.erro(401, "Sessão inválida.") : acao.apply(uid);
     }
 
-    // ----- Favoritos -----
     @GetMapping("/favoritos")
     public ResponseEntity<?> listarFavoritos(@RequestHeader(value = "Authorization", required = false) String h) {
-        return comUsuario(h, uid -> ResponseEntity.ok(
-                favoritos.findByUsuarioId(uid).stream().map(Favorito::getJogoId).toList()));
+        return comUsuario(h, uid -> ResponseEntity.ok(favoritos.findByUsuarioId(uid).stream()
+                .map(f -> Map.<String, Object>of("id", f.getJogoId(),
+                        "nome", f.getNome() == null ? "" : f.getNome(),
+                        "base", f.getPrecoBase() == null ? 0 : f.getPrecoBase())).toList()));
     }
 
     @PostMapping("/favoritos/{jogoId}")
     public ResponseEntity<?> favoritar(@RequestHeader(value = "Authorization", required = false) String h,
-                                       @PathVariable String jogoId) {
+                                       @PathVariable String jogoId,
+                                       @RequestBody(required = false) FavReq req) {
         return comUsuario(h, uid -> {
             if (jogoId.length() > 50) return AuthController.erro(400, "Jogo inválido.");
-            if (!favoritos.existsByUsuarioIdAndJogoId(uid, jogoId)) favoritos.save(new Favorito(uid, jogoId));
+            if (!favoritos.existsByUsuarioIdAndJogoId(uid, jogoId)) {
+                String nome = req == null || req.nome() == null ? "" : req.nome();
+                favoritos.save(new Favorito(uid, jogoId, nome.length() > 150 ? nome.substring(0, 150) : nome,
+                        req == null ? null : req.base()));
+            }
             return ResponseEntity.ok(Map.of("ok", true));
         });
     }
@@ -52,7 +61,6 @@ public class PerfilController {
         });
     }
 
-    // ----- Plataformas conectadas -----
     @GetMapping("/conexoes")
     public ResponseEntity<?> listarConexoes(@RequestHeader(value = "Authorization", required = false) String h) {
         return comUsuario(h, uid -> ResponseEntity.ok(conexoes.findByUsuarioId(uid).stream()
@@ -80,6 +88,24 @@ public class PerfilController {
                                          @PathVariable String plataforma) {
         return comUsuario(h, uid -> {
             conexoes.deleteByUsuarioIdAndPlataforma(uid, plataforma);
+            return ResponseEntity.ok(Map.of("ok", true));
+        });
+    }
+
+    @GetMapping("/preferencias")
+    public ResponseEntity<?> lerPreferencias(@RequestHeader(value = "Authorization", required = false) String h) {
+        return comUsuario(h, uid -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                .body(prefs.findByUsuarioId(uid).map(Preferencia::getDados).orElse("{}")));
+    }
+
+    @PutMapping("/preferencias")
+    public ResponseEntity<?> salvarPreferencias(@RequestHeader(value = "Authorization", required = false) String h,
+                                                @RequestBody String dados) {
+        return comUsuario(h, uid -> {
+            if (dados.length() > 4000) return AuthController.erro(400, "Dados grandes demais.");
+            Preferencia p = prefs.findByUsuarioId(uid).orElse(new Preferencia(uid));
+            p.setDados(dados);
+            prefs.save(p);
             return ResponseEntity.ok(Map.of("ok", true));
         });
     }

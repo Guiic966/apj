@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PLATAFORMAS } from "./catalogo.js";
 
-export default function Perfil({ user, conexoes, onConectar, onDesconectar, onSair }) {
+export default function Perfil({ user, conexoes, onConectar, onDesconectar, onSteam, onSair, obrigatorio }) {
   const [aberta, setAberta] = useState(null);
   const [conta, setConta] = useState("");
   const [erro, setErro] = useState("");
@@ -15,9 +15,10 @@ export default function Perfil({ user, conexoes, onConectar, onDesconectar, onSa
   return (
     <main className="tela">
       <h2 className="titulo-tela">Conectar plataformas</h2>
+      {obrigatorio && <div className="aviso">Conecte pelo menos uma plataforma para começar a acompanhar promoções.</div>}
       <p className="sub">
         Olá, {user.nome}! Vincule suas contas para acompanhar bibliotecas e promoções.
-        Por enquanto guardamos só o seu usuário, sem verificação junto à loja.
+        A Steam é verificada pelo login oficial dela. Nas demais, PlayStation, Xbox e Epic não oferecem login público, então guardamos só o usuário informado.
       </p>
       <p className="contagem">{conexoes.length} conectada(s) · {PLATAFORMAS.length - conexoes.length} disponível(is)</p>
 
@@ -33,7 +34,7 @@ export default function Perfil({ user, conexoes, onConectar, onDesconectar, onSa
               </div>
               {c
                 ? <button className="mini" onClick={() => executar(() => onDesconectar(p.id))}>Desconectar</button>
-                : <button className="mini principal" onClick={() => { setAberta(p.id); setConta(""); setErro(""); }}>Conectar</button>}
+                : <button className="mini principal" onClick={() => (p.id === "steam" ? executar(onSteam) : (setAberta(p.id), setConta(""), setErro("")))}>Conectar</button>}
             </div>
             {aberta === p.id && !c && (
               <form className="plat-form" onSubmit={(e) => { e.preventDefault(); executar(() => onConectar(p.id, conta)); }}>

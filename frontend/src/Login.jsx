@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API } from "./api.js";
 
 export default function Login({ onLogin, onCriarConta }) {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ export default function Login({ onLogin, onCriarConta }) {
     setErro("");
     setEnviando(true);
     try {
-      const r = await fetch("/api/auth/login", {
+      const r = await fetch(API + "/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),
